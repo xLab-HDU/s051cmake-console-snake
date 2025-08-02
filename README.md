@@ -1,7 +1,7 @@
 # CMake Console Snake
 This repository is a snake game implemented in C++, built with CMake. 
 
-[![Build Status](https://github.com/xLab-HDU/cmake-console-snake/actions/workflows/ci.yml/badge.svg)](https://github.com/xLab-HDU/RedBall/actions)
+[![Build Status](https://github.com/xLab-HDU/cmake-console-snake/actions/workflows/ci.yml/badge.svg)](https://github.com/xLab-HDU/cmake-console-snake/actions)
 
 ## How to Use
 
