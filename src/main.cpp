@@ -1,8 +1,8 @@
+// 局部更新版本
 #include <iostream>
 #include <windows.h>
 #include <conio.h>
-#include <fcntl.h>
-#include <io.h>
+#include <time.h>
 
 #define STAGE_WIDTH 20
 #define STAGE_HEIGHT 20
@@ -14,7 +14,7 @@
 #define MAXLENGTH 100
 #define COLOR_WALL 0X06
 #define COLOR_TEXT 0X0F
-#define COLOR_TEXT2 0XEC
+#define COLOR_TEXT4END 0XEC
 #define COLOR_SCORE 0X0C
 #define COLOR_FRUIT 0X0C
 #define COLOR_SNAKE_HEAD 0X09
@@ -22,11 +22,11 @@
 #define DIFFICULTY_FACTOR  50
 using namespace std;
 
-bool gameOver, fruitFlash;
-bool isFullWidth, UpdateMap, isPause;
-const int width = STAGE_WIDTH;
-const int height = STAGE_HEIGHT;
-int x, y, fruitX, fruitY, score;
+bool isGameOver, isFlash;
+bool isFullWidth, isUpdateMap, isPause;
+const int mWidth = STAGE_WIDTH;
+const int mHeight = STAGE_HEIGHT;
+int headX, headY, fruitX, fruitY, mScore;
 int tailX[MAXLENGTH], tailY[MAXLENGTH];
 int nTail;
 enum eDirection { STOP = 0, LEFT, RIGHT, UP, DOWN };
@@ -43,24 +43,25 @@ void Initial()
     CONSOLE_CURSOR_INFO _cursor = { 1, false }; //设置光标大小，隐藏光标
     SetConsoleCursorInfo(h, &_cursor);
 
-    SMALL_RECT rc = { 0, 0, 84, 26 }; //要设置的窗口显示的大小和位置
-    SetConsoleWindowInfo(h, TRUE, &rc);
+    // SMALL_RECT rc = { 0, 0, 84, 26 }; //要设置的窗口显示的大小和位置
+    // SetConsoleWindowInfo(h, TRUE, &rc);
 
-    gameOver = false;
-    fruitFlash = false;
+    isGameOver = false;
+    isFlash = false;
     isFullWidth = true;
-    UpdateMap = false;
+    isUpdateMap = false;
     isPause = false;
     dir = STOP;
-    x = width / 2;
-    y = height / 2;
-    fruitX = rand() % width;
-    fruitY = rand() % height;
-    score = 0;
+    headX = mWidth / 2;
+    headY = mHeight / 2;
+    srand((unsigned)time(NULL));
+    fruitX = rand() % (mWidth - 2) + 1;
+    fruitY = rand() % (mHeight - 2) + 1;
+    mScore = 0;
 
     nTail = 1;
-    tailX[0] = x;
-    tailY[0] = y;
+    tailX[0] = headX;
+    tailY[0] = headY;
     for (int i = 1; i < MAXLENGTH; i++)
     {
         tailX[i] = 0;
@@ -86,23 +87,23 @@ void DrawMap()
     SetConsoleTextAttribute(h, textColor);
 
     setPos(-THICHKNESS, -THICHKNESS);//绘制顶上的墙
-    for (int i = 0; i < width + THICHKNESS * 2; i++)
+    for (int i = 0; i < mWidth + THICHKNESS * 2; i++)
         if (isFullWidth)
             cout << "□";//输出双字节符号
         else
             cout << "#";
 
-    for (int i = 0; i < height; i++)
+    for (int i = 0; i < mHeight; i++)
     {
         setPos(-THICHKNESS, i);//绘制左右的墙
-        for (int j = 0; j < width + THICHKNESS * 2; j++)
+        for (int j = 0; j < mWidth + THICHKNESS * 2; j++)
         {
             if (j == 0)
                 if (isFullWidth)
                     cout << "□";//输出双字节符号
                 else
                     cout << "#";
-            else if (j == width + THICHKNESS)
+            else if (j == mWidth + THICHKNESS)
                 if (isFullWidth)
                     cout << "□";//输出双字节符号
                 else
@@ -116,7 +117,7 @@ void DrawMap()
         cout << endl;
     }
     setPos(-THICHKNESS, STAGE_HEIGHT);//绘制下方的墙
-    for (int i = 0; i < width + THICHKNESS * 2; i++)
+    for (int i = 0; i < mWidth + THICHKNESS * 2; i++)
         if (isFullWidth)
             cout << "□";//输出双字节符号
         else
@@ -135,14 +136,14 @@ void eraseSnake()
 }
 void DrawLocally()
 {
-    if (UpdateMap)
+    if (isUpdateMap)
     {
-        UpdateMap = false;
+        isUpdateMap = false;
         DrawMap();
         Prompt_info(5, 1);
     }
 
-    if (!fruitFlash)
+    if (!isFlash)
     {
         setPos(fruitX, fruitY);
         SetConsoleTextAttribute(h, COLOR_FRUIT);
@@ -150,7 +151,7 @@ void DrawLocally()
             cout << "★";////输出双字节符号
         else
             cout << "F";
-        fruitFlash = true;
+        isFlash = true;
     }
     else
     {
@@ -160,7 +161,7 @@ void DrawLocally()
             cout << "  ";////此处是两个空格
         else
             cout << " ";
-        fruitFlash = false;
+        isFlash = false;
     }
 
     for (int i = 0; i < nTail; i++)
@@ -186,7 +187,7 @@ void DrawLocally()
 
     setPos(0, STAGE_HEIGHT + THICHKNESS * 2);
     SetConsoleTextAttribute(h, COLOR_TEXT);
-    cout << "游戏得分" << score;
+    cout << "游戏得分" << mScore;
 }
 void Input()
 {
@@ -224,14 +225,14 @@ void Input()
             break;
         case 'x':
         case 'X':
-            gameOver = true;
+            isGameOver = true;
             break;
-        case 0x0D:		//回车键
+        case 13:		//回车键ASCII码对应的十六进制为0x0D
             if (isFullWidth)
                 isFullWidth = false;
             else
                 isFullWidth = true;
-            UpdateMap = true;
+            isUpdateMap = true;
             break;
         case 224:                    //方向键区的ASCII码
             switch (_getch()) {
@@ -262,41 +263,41 @@ void Logic()
     int prevX = tailX[0];
     int prevY = tailY[0];
     int prev2X, prev2Y;
-    tailX[0] = x;
-    tailY[0] = y;
+    tailX[0] = headX;
+    tailY[0] = headY;
 
     switch (dir)
     {
     case LEFT:
-        x--;
+        headX--;
         break;
     case RIGHT:
-        x++;
+        headX++;
         break;
     case UP:
-        y--;
+        headY--;
         break;
     case DOWN:
-        y++;
+        headY++;
         break;
     default:
         break;
     }
 
     for (int i = 1; i < nTail; i++)
-        if (tailX[i] == x && tailY[i] == y)
-            gameOver = true;
+        if (tailX[i] == headX && tailY[i] == headY)
+            isGameOver = true;
 
-    if (x >= width) x = 0;	else if (x < 0)	x = width - 1;
-    if (y >= height) y = 0; else if (y < 0) y = height - 1;
+    if (headX >= mWidth) headX = 0;	else if (headX < 0)	headX = mWidth - 1;
+    if (headY >= mHeight) headY = 0; else if (headY < 0) headY = mHeight - 1;
 
-    //if (x > width || x < 0 || y > height || y < 0)
-    //	gameOver = true;
-    if (x == fruitX && y == fruitY)
+    //if (x > mWidth || x < 0 || y > mHeight || y < 0)
+    //	isGameOver = true;
+    if (headX == fruitX && headY == fruitY)
     {
-        score += 10;
-        fruitX = rand() % width;
-        fruitY = rand() % height;
+        mScore += 10;
+        fruitX = rand() % (mWidth - 2) + 1;
+        fruitY = rand() % (mHeight - 2) + 1;
         nTail++;
     }
     for (int i = 1; i < nTail; i++)
@@ -359,11 +360,10 @@ void showScore(int _x, int _y)
 {
     setPos(_x + 20, _y + 15);
     SetConsoleTextAttribute(h, COLOR_TEXT);
-    int s = score / DIFFICULTY_FACTOR;
+    int s = mScore / DIFFICULTY_FACTOR;
     cout << "☆ 当前难度:     级";
-    //setPos(_x + 33, _y + 15);
     if (isFullWidth) {
-        setPos(_x + 27, _y + 15);
+        setPos(_x + 27, _y + 15);//分数的位置可根据具体的文字数量做适当调整
     }
     else {
         setPos(_x + 34, _y + 15);
@@ -375,12 +375,12 @@ void showScore(int _x, int _y)
     SetConsoleTextAttribute(h, COLOR_TEXT);
     cout << "● 当前积分:  ";
     SetConsoleTextAttribute(h, COLOR_SCORE);
-    cout << score;
+    cout << mScore;
 }
 void gameOver_info()
 {
     setPos(5, 8);
-    SetConsoleTextAttribute(h, COLOR_TEXT2);
+    SetConsoleTextAttribute(h, COLOR_TEXT4END);
     cout << "游戏结束!!";
     setPos(3, 9);
     cout << "Y重新开始/N退出";
@@ -397,7 +397,7 @@ int main()
         DrawMap();
         Prompt_info(5, 1);
 
-        while (!gameOver)
+        while (!isGameOver)
         {
             //Draw();
             Input();
@@ -407,12 +407,12 @@ int main()
             DrawLocally();
 
             showScore(5, 1);
-            int dwMilliseconds = 200 / (score / DIFFICULTY_FACTOR + 1);
+            int dwMilliseconds = 200 / (mScore / DIFFICULTY_FACTOR + 1);
             Sleep(dwMilliseconds);
         }
         gameOver_info();
 
-        while (gameOver)
+        while (isGameOver)
         {
             if (_kbhit())
             {
@@ -420,12 +420,12 @@ int main()
                 {
                 case 'y':
                 case 'Y':
-                    gameOver = false;
+                    isGameOver = false;
                     system("cls");
                     break;
                 case 'n':
                 case 'N':
-                    gameOver = false;
+                    isGameOver = false;
                     gameQuit = true;
                     break;
                 default:
