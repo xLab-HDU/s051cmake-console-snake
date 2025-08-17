@@ -1,7 +1,7 @@
 # 双字节版的贪吃蛇
 这个存储库是一个用 C++ 实现的双字节版的贪吃蛇游戏，用 CMake 构建。 
 
-[![Build Status](https://github.com/xLab-HDU/cmake-console-snake/actions/workflows/ci.yml/badge.svg)](https://github.com/xLab-HDU/cmake-console-snake/actions)
+[![Build Status](https://github.com/xLab-HDU/s051cmake-console-snake/actions/workflows/ci.yml/badge.svg)](https://github.com/xLab-HDU/s051cmake-console-snake/actions)
 
 ## How to Use
 
